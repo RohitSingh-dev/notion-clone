@@ -15,7 +15,8 @@ function Sidebar() {
         <>
             <NewDocumentButton />
         </>
-    )
+    );
+
     return (
         <div className="p-2 md:p-5 bg-gray-200 relative">
             <div className="md:hidden">
@@ -24,7 +25,7 @@ function Sidebar() {
                         <MenuIcon className="p-2 hover:opacity-30 rounded-lg" size={40} />
                     </SheetTrigger>
                     <SheetContent side="left">
-                        <SheetHeader>
+                        <SheetHeader className="text-center">
                             <SheetTitle>Menu</SheetTitle>
                             <div>{menuOptions}</div>
                         </SheetHeader>
@@ -35,6 +36,6 @@ function Sidebar() {
                 {menuOptions}
             </div>
         </div>
-    )
-}
+    );
+};
 export default Sidebar
