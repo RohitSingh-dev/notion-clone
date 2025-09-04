@@ -16,6 +16,7 @@ import { collectionGroup, query, where } from "firebase/firestore";
 import { db } from "../../firebase";
 import { DocumentData } from "firebase-admin/firestore";
 import { useEffect, useState } from "react";
+import SidebarOption from "./ui/SidebarOption";
 
 interface RoomDocument extends DocumentData {
     createdAt: string;
@@ -25,7 +26,7 @@ interface RoomDocument extends DocumentData {
 }
 
 function Sidebar() {
-    const {user} = useUser();
+    const { user } = useUser();
     const [groupedData, setGroupedData] = useState<{
         owner: RoomDocument[];
         editor: RoomDocument[];
@@ -33,16 +34,19 @@ function Sidebar() {
         owner: [],
         editor: [],
     });
-    
-    const [data, loading, error] = useCollection(
-        user && (
-            query(collectionGroup(db, "rooms"),
-        where("userId", "==", user.emailAddresses[0].toString()))
-        )
-    );
 
-    useEffect (() => {
-        if(!data) return;
+    const queryRef = user
+        ? query(
+            collectionGroup(db, "rooms"),
+            where("userId", "==", user.id) // ← this is the correct Clerk ID
+        )
+        : null;
+
+
+    const [data, loading, error] = useCollection(queryRef);
+
+    useEffect(() => {
+        if (!data) return;
 
         const grouped = data.docs.reduce<{
             owner: RoomDocument[];
@@ -51,7 +55,7 @@ function Sidebar() {
             (acc, curr) => {
                 const roomData = curr.data() as RoomDocument;
 
-                if(roomData.role === "owner") {
+                if (roomData.role === "owner") {
                     acc.owner.push({
                         id: curr.id,
                         ...roomData,
@@ -65,27 +69,37 @@ function Sidebar() {
 
                 return acc;
             }, {
-                owner: [],
-                editor: [],
-            }
+            owner: [],
+            editor: [],
+        }
         )
         setGroupedData(grouped);
-    },[data])
+    }, [data])
 
     const menuOptions = (
         <>
             <NewDocumentButton />
+            <div className="flex py-4 flex-col space-y-4 md:max-w-36">
+                {/* My Documents */}
+                {groupedData.owner.length === 0 ? (
+                    <h2 className="text-gray-500 font-semibold text-sm">No Document found</h2>
+                ) : (
+                    <>
+                        <h2 className="text-gray-500 font-semibold text-sm">My Documents</h2>
+                        {groupedData.owner.map((doc) => (
+                            <SidebarOption key={doc.id} id={doc.id} href={`/doc/${doc.id}`} />
+                        ))}
+                    </>
+                )}
+            </div>
 
-            {/* My Documents */}
-            {groupedData.owner.length === 0? (
-                <h2 className="text-gray-500 font-semibold text-sm">No Document found</h2>
-            ):(
+            {/*  Shared with me  */}
+            {groupedData.editor.length > 0 && (
                 <>
-                <h2 className="text-gray-500 font-semibold text-sm">My Documents</h2>
-                {groupedData.owner.map((doc) => {
-                    <p>{doc.roomId}</p>
-                    // <SidebarOption key={doc.id} id={doc.id} href={`/doc/${doc.id}`} />
-                })}
+                    <h2 className="text-gray-500 font-semibold text-sm">Shared with Me</h2>
+                    {groupedData.editor.map((doc) => (
+                        <SidebarOption key={doc.id} id={doc.id} href={`/doc/${doc.id}`} />
+                    ))}
                 </>
             )}
         </>
