@@ -1,6 +1,6 @@
 "use client"
 
-import Document from "@/components/document"
+import Document from "@/components/Document"
 import React from "react";
 
 function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
