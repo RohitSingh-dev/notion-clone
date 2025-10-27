@@ -1,3 +1,5 @@
+"use client"
+
 import { useUser } from "@clerk/nextjs"
 import { useRoom } from "@liveblocks/react/suspense";
 import { collectionGroup, query, where } from "firebase/firestore";
@@ -24,8 +26,6 @@ function useOwner() {
         }
     }
   }, [userInRoom, user]);
-
-  console.log("isOwner", isOwner);
 
   return isOwner;
 
