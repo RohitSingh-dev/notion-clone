@@ -10,6 +10,9 @@ import React from "react";
 import Editor from "./Editor";
 import useOwner from "../lib/useOwner";
 import DeleteDocument from "./DeleteDocument";
+import InviteUser from "./InviteUser";
+import ManageUsers from "./ManageUsers";
+import Avatars from "./Avatars";
 
 type DocumentProps = {
   id: string; 
@@ -53,6 +56,7 @@ function Document({id}: DocumentProps) {
             <>
               {/* InviteUser */}
               {/* DeleteDocument */}
+              <InviteUser />
               <DeleteDocument />
             </>
           )}
@@ -60,9 +64,11 @@ function Document({id}: DocumentProps) {
         </form>
       </div>
 
-      <div>
+      <div className="flex max-w-6xl mx-auto justify-between items-center mb-5">
+        <ManageUsers />
         {/* ManageUsers */}
 
+        <Avatars />
         {/* Avatars */}
       </div>
 

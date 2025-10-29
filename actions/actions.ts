@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { adminDb } from "../firebase-admin";
 import liveblocks from "@/lib/liveBlocks";
 
@@ -11,7 +11,7 @@ export async function createNewDocument() {
 
   const docCollectionRef = adminDb.collection("documents");
   const docRef = await docCollectionRef.add({
-    title: "New Doc"
+    title: "New Doc",
   });
 
   await adminDb
@@ -23,7 +23,7 @@ export async function createNewDocument() {
       userId,
       role: "owner",
       createdAt: new Date(),
-      roomId: docRef.id
+      roomId: docRef.id,
     });
 
   return { docId: docRef.id };
@@ -35,7 +35,7 @@ export async function deleteDocument(roomId: string) {
 
   console.log("deletedDocument", roomId);
 
-  try{
+  try {
     //delete the document reference itself
     await adminDb.collection("documents").doc(roomId).delete();
 
@@ -56,9 +56,67 @@ export async function deleteDocument(roomId: string) {
     //delete the room in liveblocks
     await liveblocks.deleteRoom(roomId);
 
-    return {success: true};
+    return { success: true };
   } catch (error) {
     console.error(error);
-    return {success: false};
+    return { success: false };
+  }
+}
+
+export async function inviteUserToDocument(roomId: string, email: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("User not authenticated");
+
+  console.log("inviteUserToDocument", roomId, email);
+
+  try {
+    // 🔍 Look up the invited user by email in Clerk
+    const client = await clerkClient();
+    const users = await client.users.getUserList({ emailAddress: [email] });
+
+    if (!users || users.data.length === 0) {
+      console.error("User not found in Clerk:", email);
+      return { success: false, message: "User not found" };
+    }
+
+    const invitedUser = users.data[0];
+    const invitedUserId = invitedUser.id;
+
+    // ✅ Save using Clerk userId
+    await adminDb
+      .collection("users")
+      .doc(invitedUserId)
+      .collection("rooms")
+      .doc(roomId)
+      .set({
+        userId: invitedUserId, // <--- Fix: use Clerk user ID
+        role: "editor",
+        createdAt: new Date(),
+        roomId: roomId,
+      });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Invite error:", error);
+    return { success: false, message: "Server error" };
+  }
+}
+
+export async function removeUsersFromDocument(roomId: string, targetUserId: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("User not authenticated");
+
+  try {
+    await adminDb
+      .collection("users")
+      .doc(targetUserId)
+      .collection("rooms")
+      .doc(roomId)
+      .delete();
+
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { success: false};
   }
 }
